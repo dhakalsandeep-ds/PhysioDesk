@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------
+   DESIGN TOKENS — single source of truth
+   --------------------------------------------------------- */
+:root {
+  /* Brand roles */
+  --color-primary:          #B8763A;
+  --color-primary-text:     #5C3A17;
+  --color-primary-soft:     #F0DFC7;
+
+  --color-secondary:        #132420;
+  --color-secondary-light:  #1D362F;
+
+  --color-tertiary:         #4F7C63;
+  --color-tertiary-soft:    #E1EBE3;
+
+  /* Surfaces */
+  --color-background:       #F6F3EA;
+  --color-surface:          #FFFFFF;
+  --color-border:           #E4DFD1;
+
+  /* Text */
+  --color-text-primary:     #1C2622;
+  --color-text-secondary:   #797365;
+
+  /* Status */
+  --color-success:          #4F7C63;
+  --color-success-soft:     #E1EBE3;
+  --color-danger:           #B5493B;
+  --color-danger-soft:      #F3DEDA;
+  --color-neutral:          #5E6B78;
+  --color-neutral-soft:     #E7EBEE;
+
+  /* Radii & shadows */
+  --radius-card: 14px;
+  --radius-pill: 9999px;
+  --shadow-card: 0 1px 2px rgba(28, 38, 34, 0.04),
+                 0 4px 12px rgba(28, 38, 34, 0.06); 
+
+   --color-warning: #D97706;
+  --color-warning-soft: #FEF3C7;
+}
+
+/* ---------------------------------------------------------
+   TAILWIND v4 — map tokens into the theme
+   --------------------------------------------------------- */
+@theme {
+  --color-primary:          var(--color-primary);
+  --color-primary-text:     var(--color-primary-text);
+  --color-primary-soft:     var(--color-primary-soft);
+  --color-secondary:        var(--color-secondary);
+  --color-secondary-light:  var(--color-secondary-light);
+  --color-tertiary:         var(--color-tertiary);
+  --color-tertiary-soft:    var(--color-tertiary-soft);
+  --color-background:       var(--color-background);
+  --color-surface:          var(--color-surface);
+  --color-border:           var(--color-border);
+  --color-text-primary:     var(--color-text-primary);
+  --color-text-secondary:   var(--color-text-secondary);
+  --color-success:          var(--color-success);
+  --color-success-soft:     var(--color-success-soft);
+  --color-danger:           var(--color-danger);
+  --color-danger-soft:      var(--color-danger-soft);
+  --color-neutral:          var(--color-neutral);
+  --color-neutral-soft:     var(--color-neutral-soft);
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body:    "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --radius-card: 14px;
+
+    --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+}
+
+/* ---------------------------------------------------------
+   BASE STYLES
+   --------------------------------------------------------- */
+html, body {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+
+.font-display { font-family: var(--font-display); }
+.font-body    { font-family: var(--font-body); }
+.font-mono    { font-family: var(--font-mono); }
