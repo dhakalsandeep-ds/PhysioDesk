@@ -1,0 +1,12 @@
+**/__pycache__/
+
+.venv
+
+
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+uv.lock
+.env

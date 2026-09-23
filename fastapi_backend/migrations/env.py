@@ -4,7 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from config import Settings
+from config import settings
 from migrations.models import metadata
 
 import sys 
@@ -51,7 +51,7 @@ def run_migrations_offline() -> None:
 
     """
     # url = config.get_main_option("sqlalchemy.url")
-    url = Settings.DATABASE_URL
+    url = settings.DATABASE_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -73,7 +73,7 @@ def run_migrations_online() -> None:
 
     # custom code
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = Settings.DATABASE_URL
+    configuration["sqlalchemy.url"] = settings.DATABASE_URL
     #
     connectable = engine_from_config(
         configuration,
