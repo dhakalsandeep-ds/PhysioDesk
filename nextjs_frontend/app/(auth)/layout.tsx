@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
 import Providers  from "@/lib/providers";
-import ClientAppShell from "@/components/ClientAppShell"; 
 import "../globals.css";
 
 const fraunces = Fraunces({
@@ -26,11 +25,11 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Clinic Dashboard",
-  description: "Clinic management system",
+  title: "Serenity - Sign In",
+  description: "Sign in to your clinic dashboard",
 };
 
-export default function RootLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -39,9 +38,7 @@ export default function RootLayout({
     <html lang="en" className={`${fraunces.variable} ${inter.variable} ${ibmPlexMono.variable}`}>
       <body className="font-body bg-background text-text-primary antialiased">
         <Providers>
-          <ClientAppShell>
-            {children}
-          </ClientAppShell>
+          {children}
         </Providers>
       </body>
     </html>
