@@ -7,7 +7,7 @@ import re
 class Patient(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
-    phone: str = Field(index=True) # Optimized database indexing for search boxes [3.3]
+    phone: str = Field(index=True) 
     age: int
     gender: str
     address: str
