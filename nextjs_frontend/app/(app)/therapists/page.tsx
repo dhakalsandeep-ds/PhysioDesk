@@ -88,11 +88,11 @@ export default function TherapistsPage() {
 
   const handleDelete = (id: number, name: string) => {
     const confirmed = window.confirm(
-      `⚠️ DEACTIVATE THERAPIST: ${name}\n\n` +
+      ` DEACTIVATE THERAPIST: ${name}\n\n` +
         `Assumption: This performs a SOFT DELETE (is_active = false).\n` +
         `• Historical appointments are preserved for billing/records.\n` +
         `• They will be removed from the active roster and scheduling grid.\n` +
-        `• ⚠️ WARNING: Future appointments are NOT automatically reassigned or cancelled.\n\n` +
+        `•  WARNING: Future appointments are NOT automatically reassigned or cancelled.\n\n` +
         `Have you manually rescheduled their upcoming patients?`
     );
     if (confirmed) {

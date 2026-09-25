@@ -12,6 +12,7 @@ from unified_response import ValidationErrorResponse, GlobalErrorResponse
 from auth.routes import router as auth_router
 from therapist.routes import router as therapist_router 
 from patients.routes import router as patient_router
+from billing.routes import router as billing_router
 
 app = FastAPI(
     responses={  
@@ -55,6 +56,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(therapist_router)
 app.include_router(patient_router)
+app.include_router(billing_router)
 
 @app.exception_handler(RequestValidationError)
 async def custom_validation_exception_handler(request, exc):

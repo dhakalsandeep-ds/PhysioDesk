@@ -272,7 +272,7 @@ export function PatientModal({
                   <option value="">No therapists available</option>
                 </select>
                 <p className="text-xs text-warning">
-                  ⚠️ No active therapists found. Please add a therapist first.
+                   No active therapists found. Please add a therapist first.
                 </p>
               </div>
             )}
