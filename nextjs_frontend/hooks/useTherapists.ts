@@ -51,6 +51,9 @@ export function useCreateScheduleOverride() {
   return useMutation({
     mutationFn: (payload: ScheduleOverrideCreate) =>
       apiClient.post("/therapists/override", payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["therapists"] }),
+        onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["therapists"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduleGrid"] });
+    },
   });
 }

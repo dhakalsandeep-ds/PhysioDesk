@@ -21,8 +21,6 @@ export interface TherapistCreate {
   start_time: string;
   end_time: string;
   slot_duration: number;
-  break_start_time?: string | null;
-  break_end_time?: string | null;
 }
 
 export interface ScheduleOverrideCreate {
@@ -31,6 +29,4 @@ export interface ScheduleOverrideCreate {
   is_day_off: boolean;
   custom_start_time?: string | null;
   custom_end_time?: string | null;
-  break_start_time?: string | null;
-  break_end_time?: string | null;
 }

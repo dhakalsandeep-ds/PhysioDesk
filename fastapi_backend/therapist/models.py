@@ -20,6 +20,4 @@ class ScheduleOverride(SQLModel, table=True):
     is_day_off: bool = Field(default=False)
     custom_start_time: Optional[str] = None
     custom_end_time: Optional[str] = None
-    break_start_time: Optional[str] = None
-    break_end_time: Optional[str] = None
 

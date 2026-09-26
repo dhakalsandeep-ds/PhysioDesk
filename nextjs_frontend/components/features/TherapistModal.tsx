@@ -16,7 +16,7 @@ interface TherapistModalProps {
 }
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const VALID_SLOT_DURATIONS = [15, 30, 45, 60];
+const VALID_SLOT_DURATIONS = [30, 60];
 
 export function TherapistModal({
   isOpen, onClose, therapist, onSubmit, isLoading, error,
@@ -45,8 +45,6 @@ export function TherapistModal({
         start_time: therapist.start_time,
         end_time: therapist.end_time,
         slot_duration: therapist.slot_duration,
-        break_start_time: therapist.break_start_time,
-        break_end_time: therapist.break_end_time,
       });
       setSelectedDays(therapist.working_days);
     } else {
@@ -57,8 +55,6 @@ export function TherapistModal({
         start_time: "09:00",
         end_time: "17:00",
         slot_duration: 30,
-        break_start_time: null,
-        break_end_time: null,
       });
       setSelectedDays([]);
     }
@@ -102,20 +98,6 @@ export function TherapistModal({
       if (formData.start_time >= formData.end_time) {
         errors.end_time = "End time must be after start time.";
       }
-    }
-
-    if (formData.break_start_time && !timeRegex.test(formData.break_start_time)) {
-      errors.break_start_time = "Invalid format. Use HH:MM.";
-    }
-    if (formData.break_end_time && !timeRegex.test(formData.break_end_time)) {
-      errors.break_end_time = "Invalid format. Use HH:MM.";
-    }
-    if (formData.break_start_time && formData.break_end_time) {
-      if (formData.break_start_time >= formData.break_end_time) {
-        errors.break_end_time = "Break end must be after break start.";
-      }
-    } else if (Boolean(formData.break_start_time) !== Boolean(formData.break_end_time)) {
-      errors.break_end_time = "Provide both break start and end, or neither.";
     }
 
     setValidationErrors(errors);
@@ -288,39 +270,12 @@ export function TherapistModal({
                   <option key={d} value={d}>{d} minutes</option>
                 ))}
               </select>
+	      <p className="mt-1 text-xs text-text-secondary">
+		Must algin with 30-min grid intervals
+	      </p>
             </div>
           </div>
 
-          <div className="border-t border-border pt-4">
-            <h3 className="text-sm font-semibold text-text-primary mb-3">Break Time (Optional)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">Break Start</label>
-                <input
-                  type="time"
-                  value={formData.break_start_time || ""}
-                  onChange={(e) => handleChange("break_start_time", e.target.value || null)}
-                  className={`${inputClass("break_start_time")} font-mono`}
-                  disabled={isLoading}
-                />
-                {validationErrors.break_start_time && <p className="mt-1 text-xs text-danger">{validationErrors.break_start_time}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">Break End</label>
-                <input
-                  type="time"
-                  value={formData.break_end_time || ""}
-                  onChange={(e) => handleChange("break_end_time", e.target.value || null)}
-                  className={`${inputClass("break_end_time")} font-mono`}
-                  disabled={isLoading}
-                />
-                {validationErrors.break_end_time && <p className="mt-1 text-xs text-danger">{validationErrors.break_end_time}</p>}
-              </div>
-            </div>
-            <p className="mt-2 text-xs text-text-secondary">
-              Leave empty if no break. Break time is excluded from billable capacity.
-            </p>
-          </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
             <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>

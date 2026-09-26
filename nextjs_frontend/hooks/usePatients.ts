@@ -9,6 +9,9 @@ import {
 } from "@/types/patient";
 
 
+const extractData = <T,>(response: any): T => response.data.data;
+
+
 export function usePatients(filters?: {
   name_or_phone?: string;
   therapist_id?: number;
@@ -21,7 +24,7 @@ export function usePatients(filters?: {
     queryFn: async () => {
       const response = await apiClient.get("/patients", { params: filters });
       
-      return response.data.data as PaginatedPatientsResponse;
+      return extractData<any[]>(response) 
     },
   });
 }
@@ -99,3 +102,21 @@ export function useDeletePatient() {
   });
 }
 
+
+
+
+export function usePatientsList() {
+  return useQuery({
+    queryKey: ["patients-list"],
+    queryFn: async () => {
+      const response = await apiClient.get("/patients", { params: { page_size: 100 } });
+      const payload = response.data.data;
+      
+      if (Array.isArray(payload)) return payload;
+      if (payload && typeof payload === "object") {
+        return payload.items || payload.results || payload.data || [];
+      }
+      return [];
+    },
+  });
+}

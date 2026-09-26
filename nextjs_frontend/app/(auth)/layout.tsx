@@ -25,7 +25,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Serenity - Sign In",
+  title: "PhysioDesk - Sign In",
   description: "Sign in to your clinic dashboard",
 };
 

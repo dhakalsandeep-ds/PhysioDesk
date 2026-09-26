@@ -29,6 +29,13 @@ export function SideBar() {
       icon: Users, 
       roles: ["admin", "receptionist"] 
     },
+     {
+      name: "Therapists",
+      href: "/therapists",
+      icon: Stethoscope,
+      roles: ["admin"]
+    },
+
     { 
       name: "Schedule", 
       href: "/schedule", 
@@ -39,12 +46,6 @@ export function SideBar() {
       name: "Billing", 
       href: "/billing", 
       icon: FileText, 
-      roles: ["admin"] 
-    },
-    { 
-      name: "Therapists", 
-      href: "/therapists", 
-      icon: Stethoscope, 
       roles: ["admin"] 
     },
   ];

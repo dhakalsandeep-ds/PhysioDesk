@@ -1,11 +1,20 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Calendar, CalendarClock, Search, Users } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Search,
+  Plus,
+  Pencil,
+  Trash2,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { useToast } from "@/components/ui/Toast"; 
+import { useToast } from "@/components/ui/Toast";
 import { TherapistModal } from "@/components/features/TherapistModal";
 import { ScheduleOverrideModal } from "@/components/features/ScheduleOverrideModal";
 import {
@@ -15,116 +24,159 @@ import {
   useDeleteTherapist,
   useCreateScheduleOverride,
 } from "@/hooks/useTherapists";
-import { useAuth } from "@/hooks/useAuth";
-import { Therapist, TherapistCreate, ScheduleOverrideCreate } from "@/types/therapist";
+import { Therapist } from "@/types/therapist";
+
+const DAYS_OF_WEEK = [
+  "Monday", "Tuesday", "Wednesday", "Thursday",
+  "Friday", "Saturday", "Sunday",
+];
+
+
+const calculateCapacityFromSlots = (
+  startTime?: string,
+  endTime?: string,
+  slotDurationMin?: number
+): number => {
+  if (!startTime || !endTime) return 8;
+
+  const [startH, startM] = startTime.split(":").map(Number);
+  const [endH, endM] = endTime.split(":").map(Number);
+
+  const startDecimal = (startH || 0) + (startM || 0) / 60;
+  const endDecimal = (endH || 0) + (endM || 0) / 60;
+
+  const totalWorkingHours = endDecimal - startDecimal;
+  if (totalWorkingHours <= 0) return 8;
+
+  if (slotDurationMin && slotDurationMin > 0) {
+    const totalWorkingMinutes = totalWorkingHours * 60;
+    const maxSlots = Math.floor(totalWorkingMinutes / slotDurationMin);
+    return (maxSlots * slotDurationMin) / 60;
+  }
+
+  return totalWorkingHours;
+};
 
 export default function TherapistsPage() {
-  const router = useRouter();
-  const { currentUser, isLoading: isAuthLoading } = useAuth();
-  const { addToast } = useToast(); 
+  const { addToast } = useToast();
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "off">("all");
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
+  const [dayFilter, setDayFilter] = useState("");
+  const [specialtyFilter, setSpecialtyFilter] = useState("");
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTherapist, setEditingTherapist] = useState<Therapist | null>(null);
   const [overrideTherapist, setOverrideTherapist] = useState<Therapist | null>(null);
 
-  const { data: therapists = [], isLoading: isDataLoading } = useTherapists();
+  const { data: therapists = [], isLoading } = useTherapists();
+
   const createMutation = useCreateTherapist();
   const updateMutation = useUpdateTherapist();
   const deleteMutation = useDeleteTherapist();
   const overrideMutation = useCreateScheduleOverride();
 
+  const activeMutation = editingTherapist ? updateMutation : createMutation;
+
   const filteredTherapists = useMemo(() => {
     return therapists.filter((t) => {
       const matchesSearch =
+        !search ||
         t.name.toLowerCase().includes(search.toLowerCase()) ||
         t.specialty.toLowerCase().includes(search.toLowerCase());
 
-      const isOffDuty = t.daily_capacity_hours === 0;
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" && !isOffDuty) ||
-        (statusFilter === "off" && isOffDuty);
+      const matchesDay =
+        !dayFilter || t.working_days.includes(dayFilter);
 
-      return matchesSearch && matchesStatus;
+      const matchesSpecialty =
+        !specialtyFilter || t.specialty.toLowerCase() === specialtyFilter.toLowerCase();
+
+      return matchesSearch && matchesDay && matchesSpecialty;
     });
-  }, [therapists, search, statusFilter]);
+  }, [therapists, search, dayFilter, specialtyFilter]);
 
-  useEffect(() => {
-    if (!isAuthLoading && currentUser && currentUser.role === "receptionist") {
-      router.push("/");
-    }
-  }, [isAuthLoading, currentUser, router]);
+  const totalPages = Math.ceil(filteredTherapists.length / pageSize) || 1;
+  const paginatedTherapists = filteredTherapists.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
-  if (isAuthLoading || (currentUser && currentUser.role === "receptionist")) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-text-secondary font-medium">
-          {isAuthLoading ? "Verifying access..." : "Redirecting to dashboard..."}
-        </p>
-      </div>
-    );
-  }
+  const uniqueSpecialties = useMemo(() => {
+    return Array.from(new Set(therapists.map((t) => t.specialty).filter(Boolean))).sort();
+  }, [therapists]);
 
-  if (!isAuthLoading && !currentUser) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-text-secondary font-medium">Please sign in to view this page.</p>
-      </div>
-    );
-  }
-
-  const handleCreate = (data: TherapistCreate) => {
-    return createMutation.mutateAsync(data);
+  const handleCreate = async (payload: any) => {
+    await createMutation.mutateAsync(payload);
+    setIsEditModalOpen(false);
   };
 
-  const handleUpdate = (data: TherapistCreate) => {
-    if (!editingTherapist) return Promise.reject();
-    return updateMutation.mutateAsync({ id: editingTherapist.id, payload: data });
+  const handleUpdate = async (payload: any) => {
+    if (!editingTherapist) return;
+    await updateMutation.mutateAsync({ id: editingTherapist.id, payload });
+    setIsEditModalOpen(false);
+    setEditingTherapist(null);
   };
 
   const handleDelete = (id: number, name: string) => {
-    const confirmed = window.confirm(
-      ` DEACTIVATE THERAPIST: ${name}\n\n` +
-        `Assumption: This performs a SOFT DELETE (is_active = false).\n` +
-        `• Historical appointments are preserved for billing/records.\n` +
-        `• They will be removed from the active roster and scheduling grid.\n` +
-        `•  WARNING: Future appointments are NOT automatically reassigned or cancelled.\n\n` +
-        `Have you manually rescheduled their upcoming patients?`
-    );
-    if (confirmed) {
-      deleteMutation.mutate(id);
-    }
-  };
-
-  const handleOverride = (data: ScheduleOverrideCreate) => {
-    overrideMutation.mutate(data, {
-      onSuccess: () => {
-        addToast("Schedule override applied successfully!", "success");
-        setIsOverrideModalOpen(false);
-        setOverrideTherapist(null);
-      },
+    if (!window.confirm(`Archive therapist "${name}"? Their existing appointments will be preserved.`)) return;
+    deleteMutation.mutate(id, {
+      onSuccess: () => addToast("Therapist archived.", "success"),
     });
   };
+
+  const handleOverrideSubmit = async (payload: any) => {
+    await overrideMutation.mutateAsync(payload);
+    setOverrideTherapist(null);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleDayChange = (value: string) => {
+    setDayFilter(value);
+    setPage(1);
+  };
+
+  const handleSpecialtyChange = (value: string) => {
+    setSpecialtyFilter(value);
+    setPage(1);
+  };
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | string)[] = [];
+    pages.push(1);
+    if (page > 3) pages.push("...");
+    const start = Math.max(2, page - 1);
+    const end = Math.min(totalPages - 1, page + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (page < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  }, [page, totalPages]);
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 px-4 py-2 font-body">
-      <header className="flex items-center justify-between pb-2 pt-4">
+      <header className="flex items-center justify-between pb-2 pt-4 border-b border-border">
         <div>
           <h1 className="font-display text-3xl font-bold text-text-primary tracking-tight">
-            Therapists Directory
+            Therapist Roster
           </h1>
           <p className="text-text-secondary text-xs mt-1">
-            Manage your clinic's active therapist roster, schedules, and daily utilization
+            Manage your clinic's active therapists and their schedules
           </p>
         </div>
+
         <Button
           variant="primary"
           onClick={() => {
             setEditingTherapist(null);
-            setIsModalOpen(true);
+            setIsEditModalOpen(true);
           }}
         >
           <Plus className="w-4 h-4" /> Add Therapist
@@ -139,185 +191,266 @@ export default function TherapistsPage() {
               type="text"
               placeholder="Search by name or specialty..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
             />
           </div>
+
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "off")}
+            value={dayFilter}
+            onChange={(e) => handleDayChange(e.target.value)}
             className="px-4 py-2 bg-background border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:w-48 transition cursor-pointer"
           >
-            <option value="all">All Statuses</option>
-            <option value="active">Active Today</option>
-            <option value="off">Off Duty Today</option>
+            <option value="">All Working Days</option>
+            {DAYS_OF_WEEK.map((day) => (
+              <option key={day} value={day}>
+                {day}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={specialtyFilter}
+            onChange={(e) => handleSpecialtyChange(e.target.value)}
+            className="px-4 py-2 bg-background border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:w-48 transition cursor-pointer"
+          >
+            <option value="">All Specialties</option>
+            {uniqueSpecialties.map((spec) => (
+              <option key={spec} value={spec}>
+                {spec}
+              </option>
+            ))}
           </select>
         </div>
       </Card>
 
       <Card className="overflow-hidden bg-surface border border-border shadow-card rounded-[14px]">
-        {isDataLoading ? (
-          <div className="p-8 text-center text-text-secondary">Loading therapists...</div>
-        ) : filteredTherapists.length === 0 ? (
+        {isLoading ? (
+          <div className="p-8 text-center text-text-secondary">
+            Loading therapists...
+          </div>
+        ) : paginatedTherapists.length === 0 ? (
           <div className="p-8 text-center text-text-secondary">
             No therapists found matching your criteria.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
-              <thead className="bg-background border-b border-border text-text-secondary uppercase tracking-wider text-xs font-semibold select-none">
-                <tr>
-                  <th className="text-left py-3 px-6 w-[20%]">Name</th>
-                  <th className="text-left py-3 px-6 w-[20%]">Specialty</th>
-                  <th className="text-left py-3 px-6 w-[20%]">Working Days</th>
-                  <th className="text-left py-3 px-6 w-[25%]">Today's Load</th>
-                  <th className="text-left py-3 px-6 w-[15%]">Status</th>
-                  <th className="text-right py-3 px-6 w-[20%]">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border text-text-primary">
-                {filteredTherapists.map((therapist) => {
-                  const isOffDuty = therapist.daily_capacity_hours === 0;
-                  return (
-                    <tr
-                      key={therapist.id}
-                      className="hover:bg-background/40 transition-colors duration-150"
-                    >
-                      <td className="py-3.5 px-6 font-semibold text-text-primary tracking-tight">
-                        {therapist.name}
-                      </td>
-                      <td className="py-3.5 px-6 text-text-secondary">{therapist.specialty}</td>
-                      <td className="py-3.5 px-6">
-                        <div className="flex flex-wrap gap-1">
-                          {therapist.working_days.map((day) => (
-                            <span
-                              key={day}
-                              className="px-2 py-0.5 bg-tertiary-soft text-tertiary text-[10px] font-semibold uppercase rounded"
-                            >
-                              {day.slice(0, 3)}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-6">
-                        {isOffDuty ? (
-                          <div className="flex items-center gap-2 text-xs text-text-secondary italic">
-                            <span className="w-2 h-2 rounded-full bg-neutral-soft"></span>
-                            Off duty today
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[900px]">
+                <thead className="bg-background border-b border-border text-text-secondary uppercase tracking-wider text-xs font-semibold select-none">
+                  <tr>
+                    <th className="text-left py-3 px-6 w-[20%]">Name</th>
+                    <th className="text-left py-3 px-6 w-[15%]">Specialty</th>
+                    <th className="text-left py-3 px-6 w-[18%]">Working Days</th>
+                    <th className="text-left py-3 px-6 w-[22%]">Today's Utilization</th>
+                    <th className="text-right py-3 px-6 w-[15%]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border text-text-primary">
+                  {paginatedTherapists.map((t) => {
+                    const capacityHours =
+                      t.daily_capacity_hours && t.daily_capacity_hours > 0
+                        ? t.daily_capacity_hours
+                        : calculateCapacityFromSlots(t.start_time, t.end_time, t.slot_duration);
+
+                    const bookedHours = t.booked_hours_today || 0;
+                    const patientsSeen = t.patients_seen_today || 0;
+
+                    const pct = capacityHours > 0
+                      ? Math.round((bookedHours / capacityHours) * 100)
+                      : 0;
+
+                    return (
+                      <tr
+                        key={t.id}
+                        className="transition-colors duration-150 hover:bg-background/40"
+                      >
+                        <td className="py-3.5 px-6">
+                          <div className="font-semibold text-text-primary tracking-tight">
+                            {t.name}
                           </div>
-                        ) : (
-                          <div className="space-y-1.5 w-40">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-mono text-text-secondary flex items-center gap-1">
-                                <Users className="w-3 h-3" />
-                                {therapist.patients_seen_today} pts
+                          <div className="text-xs font-mono mt-0.5 text-text-secondary">
+                            {t.start_time} – {t.end_time} · {t.slot_duration}min slots
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-6 text-text-secondary">
+                          {t.specialty}
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <div className="flex flex-wrap gap-1">
+                            {t.working_days.map((day) => (
+                              <span
+                                key={day}
+                                className="px-2 py-0.5 bg-tertiary-soft text-tertiary text-[10px] font-semibold uppercase rounded"
+                              >
+                                {day.slice(0, 3)}
                               </span>
-                              <span className="font-mono font-semibold text-primary">
-                                {therapist.utilization_today_percent.toFixed(0)}%
-                              </span>
-                            </div>
-                            <div className="w-full bg-background border border-border rounded-full h-1.5 overflow-hidden">
+                            ))}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 bg-background rounded-full h-2 overflow-hidden border border-border">
                               <div
-                                className={`h-full transition-all ${
-                                  therapist.utilization_today_percent >= 90
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                  pct >= 100
                                     ? "bg-danger"
-                                    : therapist.utilization_today_percent >= 70
+                                    : pct >= 75
                                     ? "bg-warning"
                                     : "bg-primary"
                                 }`}
-                                style={{
-                                  width: `${Math.min(
-                                    therapist.utilization_today_percent,
-                                    100
-                                  )}%`,
-                                }}
+                                style={{ width: `${Math.min(pct, 100)}%` }}
                               />
                             </div>
-                            <div className="text-[10px] text-text-secondary text-right">
-                              {therapist.booked_hours_today.toFixed(1)}h /{" "}
-                              {therapist.daily_capacity_hours.toFixed(1)}h
-                            </div>
+                            <span className="text-xs font-mono font-semibold text-text-primary w-10 text-right">
+                              {pct}%
+                            </span>
                           </div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-6">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            !isOffDuty
-                              ? "bg-success-soft text-success"
-                              : "bg-neutral-soft text-text-secondary"
-                          }`}
-                        >
-                          {!isOffDuty ? "Active" : "Off Duty"}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-6 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => router.push(`/schedule?therapist=${therapist.id}`)}
-                            className="p-1.5 text-text-secondary hover:text-primary hover:bg-primary-soft rounded-md transition duration-150 cursor-pointer"
-                            title="View in Schedule Grid"
-                          >
-                            <Calendar className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setOverrideTherapist(therapist);
-                              setIsOverrideModalOpen(true);
-                            }}
-                            className="p-1.5 text-text-secondary hover:text-warning hover:bg-warning-soft rounded-md transition duration-150 cursor-pointer"
-                            title="Override Schedule"
-                          >
-                            <CalendarClock className="w-4 h-4" /> 
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingTherapist(therapist);
-                              setIsModalOpen(true);
-                            }}
-                            className="p-1.5 text-text-secondary hover:text-primary hover:bg-primary-soft rounded-md transition duration-150 cursor-pointer"
-                            title="Edit Details"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(therapist.id, therapist.name)}
-                            className="p-1.5 text-text-secondary hover:text-danger hover:bg-danger-soft rounded-md transition duration-150 cursor-pointer"
-                            title="Deactivate Therapist"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                          <div className="text-[10px] text-text-secondary mt-1 font-mono">
+                            {bookedHours}h / {capacityHours}h booked · {patientsSeen} seen
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setOverrideTherapist(t)}
+                              className="p-1.5 rounded-md text-text-secondary hover:text-primary hover:bg-primary/10 transition duration-150 cursor-pointer"
+                              title="Override Schedule"
+                            >
+                              <Calendar className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingTherapist(t);
+                                setIsEditModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-md text-text-secondary hover:text-primary hover:bg-primary/10 transition duration-150 cursor-pointer"
+                              title="Edit"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(t.id, t.name)}
+                              className="p-1.5 rounded-md text-text-secondary hover:text-danger hover:bg-danger/10 transition duration-150 cursor-pointer"
+                              title="Archive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-border bg-background/50 gap-4">
+                <p className="text-xs text-text-secondary">
+                  Showing{" "}
+                  <span className="font-semibold text-text-primary">
+                    {(page - 1) * pageSize + 1}
+                  </span>{" "}
+                  –{" "}
+                  <span className="font-semibold text-text-primary">
+                    {Math.min(page * pageSize, filteredTherapists.length)}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-text-primary">
+                    {filteredTherapists.length}
+                  </span>{" "}
+                  therapists
+                </p>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage(1)}
+                    disabled={page === 1}
+                    className="p-1.5 rounded-md text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-background transition"
+                    title="First Page"
+                  >
+                    <ChevronsLeft className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-1.5 rounded-md text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-background transition"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {pageNumbers.map((pageNum, idx) =>
+                    pageNum === "..." ? (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 text-xs text-text-secondary"
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum as number)}
+                        className={`w-8 h-8 flex items-center justify-center text-xs font-medium rounded-md transition ${
+                          page === pageNum
+                            ? "bg-primary text-white shadow-sm"
+                            : "text-text-secondary hover:bg-background hover:text-text-primary"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="p-1.5 rounded-md text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-background transition"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => setPage(totalPages)}
+                    disabled={page === totalPages}
+                    className="p-1.5 rounded-md text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-background transition"
+                    title="Last Page"
+                  >
+                    <ChevronsRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </Card>
 
       <TherapistModal
-        isOpen={isModalOpen}
+        isOpen={isEditModalOpen}
         onClose={() => {
-          setIsModalOpen(false);
+          createMutation.reset();
+          updateMutation.reset();
+          setIsEditModalOpen(false);
           setEditingTherapist(null);
         }}
-        onSubmit={editingTherapist ? handleUpdate : handleCreate}
         therapist={editingTherapist}
+        onSubmit={editingTherapist ? handleUpdate : handleCreate}
         isLoading={createMutation.isPending || updateMutation.isPending}
-        error={createMutation.error || updateMutation.error}
+        error={activeMutation.error}
       />
 
       <ScheduleOverrideModal
-        isOpen={isOverrideModalOpen}
+        isOpen={!!overrideTherapist}
         onClose={() => {
-          setIsOverrideModalOpen(false);
+          overrideMutation.reset();
           setOverrideTherapist(null);
         }}
-        onSubmit={handleOverride}
         therapist={overrideTherapist}
+        onSubmit={handleOverrideSubmit}
         isLoading={overrideMutation.isPending}
         error={overrideMutation.error}
       />

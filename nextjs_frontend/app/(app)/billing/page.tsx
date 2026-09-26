@@ -142,7 +142,7 @@ export default function BillingPage() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 px-4 py-2 font-body">
-      <header className="flex items-center justify-between pb-2 pt-4">
+      <header className="flex items-center justify-between pb-2 pt-4 border-b" style={{ borderColor: "#E4DFD1" }}  >
         <div>
           <h1 className="font-display text-3xl font-bold text-text-primary tracking-tight">
             Billing

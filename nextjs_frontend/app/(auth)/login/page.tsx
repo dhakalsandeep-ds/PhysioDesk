@@ -11,12 +11,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const { login, isLoading, error, isAuthenticated } = useAuth();
   const router = useRouter();
-  
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    
+
     if (isAuthenticated) {
       router.push("/");
     }
@@ -38,7 +38,9 @@ export default function LoginPage() {
   if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-text-secondary font-medium font-body">Redirecting to dashboard...</p>
+        <p className="text-text-secondary font-medium font-body">
+          Redirecting to dashboard...
+        </p>
       </div>
     );
   }
@@ -46,7 +48,6 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-background flex items-center justify-center p-6 font-body">
       <Card className="w-full max-w-md p-8 bg-surface border border-border shadow-card rounded-[14px]">
-        
         <div className="text-center mb-8">
           <h1 className="font-display text-3xl font-bold text-text-primary tracking-tight">
             Physio<span className="text-primary">Desk</span>
@@ -59,12 +60,16 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
             <div className="p-3 rounded-lg bg-danger-soft text-danger text-sm font-medium border border-danger/20">
-              {(error as any)?.response?.data?.detail || "Login failed. Please try again."}
+              {(error as any)?.response?.data?.detail ||
+                "Login failed. Please try again."}
             </div>
           )}
 
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-text-primary">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-text-primary"
+            >
               Email Address
             </label>
             <input
@@ -80,7 +85,10 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium text-text-primary">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-text-primary"
+            >
               Password
             </label>
             <input
@@ -95,9 +103,9 @@ export default function LoginPage() {
             />
           </div>
 
-          <Button 
-            type="submit" 
-            variant="primary" 
+          <Button
+            type="submit"
+            variant="primary"
             className="w-full py-2.5 bg-primary text-white rounded-lg transition hover:opacity-90"
             disabled={isLoading}
           >
@@ -107,7 +115,15 @@ export default function LoginPage() {
 
         <div className="mt-6 pt-6 border-t border-border text-center">
           <p className="text-xs text-text-secondary">
-            Secure clinic authentication powered by JWT tokens
+            Built by{" "}
+            <a
+              href="https://github.com/dhakalsandeep-ds"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-text-primary hover:text-primary transition underline underline-offset-2"
+            >
+              Sandeep Dhakal
+            </a>
           </p>
         </div>
       </Card>
