@@ -3,8 +3,12 @@ import axios, {
   type AxiosRequestConfig,
 } from "axios";
 
-const API_URL =
+const rawApiURL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
+
+const API_URL = rawApiUrl.endsWith("/api")
+  ? rawApiUrl
+  : `${rawApiUrl.replace(/\/$/, "")}/api`;
 
 type RetryableRequest = AxiosRequestConfig & {
   _retry?: boolean;

@@ -1,0 +1,44 @@
+services:
+  # 1. FastAPI Backend
+  - type: web
+    name: physiodesk-backend
+    env: python
+    region: singapore
+    buildCommand: "cd fastapi_backend && pip install uv && uv pip install --system -r requirements.txt"
+    startCommand: "cd fastapi_backend && alembic upgrade head && python seeder.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: physiodesk-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        fromService:
+          type: web
+          name: physiodesk-frontend
+          property: url
+
+  # 2. Next.js Frontend
+  - type: web
+    name: physiodesk-frontend
+    env: node
+    region: singapore
+    buildCommand: "cd nextjs_frontend && npm install && npm run build"
+    startCommand: "cd nextjs_frontend && npm run start"
+    envVars:
+      - key: NODE_VERSION
+        value: "20.11.0"
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: physiodesk-backend
+          property: url
+
+# 3. PostgreSQL Database
+databases:
+  - name: physiodesk-db
+    databaseName: physiodesk
+    user: physiodesk_user
