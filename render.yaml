@@ -4,11 +4,16 @@ services:
     name: physiodesk-backend
     env: python
     region: singapore
-    buildCommand: "cd fastapi_backend && pip install uv && uv pip install --system -r requirements.txt"
-    startCommand: "cd fastapi_backend && alembic upgrade head && python seeder.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    plan: free
+    buildFilter:
+      paths:
+        - fastapi_backend/**
+        - render.yaml
+    buildCommand: "cd fastapi_backend && pip install uv && uv sync"
+    startCommand: "cd fastapi_backend && uv run bash -c 'alembic upgrade head && python seeder.py && uvicorn main:app --host 0.0.0.0 --port $PORT'"    
     envVars:
       - key: PYTHON_VERSION
-        value: "3.12.0"
+        value: "3.13.0" 
       - key: DATABASE_URL
         fromDatabase:
           name: physiodesk-db
@@ -16,29 +21,30 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        fromService:
-          type: web
-          name: physiodesk-frontend
-          property: url
+        value: "https://physiodesk-frontend.onrender.com"
 
   # 2. Next.js Frontend
   - type: web
     name: physiodesk-frontend
     env: node
     region: singapore
+    plan: free
     buildCommand: "cd nextjs_frontend && npm install && npm run build"
     startCommand: "cd nextjs_frontend && npm run start"
+    buildFilter:
+      paths:
+        - nextjs_frontend/**
+        - render.yaml
     envVars:
       - key: NODE_VERSION
         value: "20.11.0"
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: physiodesk-backend
-          property: url
+        value: "https://physiodesk-backend.onrender.com/api"
 
 # 3. PostgreSQL Database
 databases:
   - name: physiodesk-db
+    plan: free
     databaseName: physiodesk
     user: physiodesk_user
+    region: singapore

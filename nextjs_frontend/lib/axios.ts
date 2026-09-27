@@ -3,7 +3,7 @@ import axios, {
   type AxiosRequestConfig,
 } from "axios";
 
-const rawApiURL =
+const rawApiUrl =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
 
 const API_URL = rawApiUrl.endsWith("/api")
