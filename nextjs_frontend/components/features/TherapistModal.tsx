@@ -30,8 +30,6 @@ export function TherapistModal({
     start_time: "09:00",
     end_time: "17:00",
     slot_duration: 30,
-    break_start_time: null,     
-    break_end_time: null,        
   });
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});

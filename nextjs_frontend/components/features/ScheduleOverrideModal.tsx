@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast"; 
 import { Therapist, ScheduleOverrideCreate } from "@/types/therapist";
 
 interface ScheduleOverrideModalProps {
@@ -22,6 +23,8 @@ export function ScheduleOverrideModal({
   isLoading,
   error,
 }: ScheduleOverrideModalProps) {
+  const { addToast } = useToast(); 
+
   const [formData, setFormData] = useState<ScheduleOverrideCreate>({
     therapist_id: 0,
     date: "",
@@ -105,6 +108,10 @@ export function ScheduleOverrideModal({
         custom_start_time: formData.custom_start_time || null,
         custom_end_time: formData.custom_end_time || null,
       });
+      
+      addToast("Schedule override applied successfully.", "success");
+      onClose();
+      
     } catch (err: any) {
       const message = extractErrorMessage(err);
       setBackendError(message);

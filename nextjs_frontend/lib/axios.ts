@@ -4,7 +4,7 @@ import axios, {
 } from "axios";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
 
 type RetryableRequest = AxiosRequestConfig & {
   _retry?: boolean;
@@ -64,6 +64,7 @@ apiClient.interceptors.request.use((config) => {
   const accessToken = getAccessToken();
 
   if (accessToken) {
+
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
@@ -154,8 +155,8 @@ apiClient.interceptors.response.use(
     if (isRefreshing) {
       const token = await waitForRefresh();
 
-      request.headers.Authorization = `Bearer ${token}`;
-
+request.headers = request.headers ?? {};
+request.headers.Authorization = `Bearer ${token}`;
       return apiClient(request);
     }
 

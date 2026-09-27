@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse  
 from fastapi.middleware.cors import CORSMiddleware
 
-
+from config import settings 
 from unified_response import ValidationErrorResponse, GlobalErrorResponse
 
 
@@ -17,6 +17,8 @@ from dashboard.routes import router as dashboard_router
 from scheduling.routes import router as scheduling_router
 
 app = FastAPI(
+    title="PhysioDesk API",
+    root_path="/api",
     responses={  
         status.HTTP_422_UNPROCESSABLE_CONTENT: {  
             "model": ValidationErrorResponse,
@@ -41,17 +43,15 @@ app = FastAPI(
     }
 )
 
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
-
 
 
 

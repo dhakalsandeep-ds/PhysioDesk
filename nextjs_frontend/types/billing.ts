@@ -20,4 +20,5 @@ export interface InvoiceCreate {
   status: "Paid" | "Due";
   invoice_number?: string;
   created_at?: string;
+  notes?: string;
 }

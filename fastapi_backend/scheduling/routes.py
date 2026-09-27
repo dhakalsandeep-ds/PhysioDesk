@@ -40,7 +40,6 @@ def _is_available(
     target_date: datetime,
     slot_time: str,
 ) -> bool:
-    """Check if therapist is working at this specific time slot."""
     day_of_week = target_date.strftime("%A")
     working_days = [d.strip() for d in therapist.working_days.split(",") if d.strip()]
 
@@ -64,7 +63,6 @@ def _get_working_hours(
     therapist: Therapist, 
     override: ScheduleOverride | None
 ) -> tuple[datetime, datetime]:
-    """Get the effective working hours for a therapist on a given day."""
     if override and override.custom_start_time and override.custom_end_time:
         start = datetime.strptime(override.custom_start_time, "%H:%M")
         end = datetime.strptime(override.custom_end_time, "%H:%M")
@@ -79,14 +77,12 @@ def _appointment_fits_in_working_hours(
     slot_duration: int,
     working_end: datetime,
 ) -> bool:
-    """Check if the full appointment fits within working hours."""
     start_dt = datetime.strptime(start_time, "%H:%M")
     appointment_end = start_dt + timedelta(minutes=slot_duration)
     return appointment_end <= working_end
 
 
 def _validate_not_past_date(date_str: str) -> None:
-    """Block any operation on past dates."""
     try:
         target = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
@@ -262,7 +258,7 @@ def book_appointment(
             detail=f"Booking Denied: Appointment would end at {appointment_end.strftime('%H:%M')} but therapist finishes at {working_end.strftime('%H:%M')}. Choose an earlier time slot.",
         )
 
-    slots_to_check = therapist.slot_duration 
+    slots_to_check = therapist.slot_duration // MASTER_INTERVAL_MINUTES
     current_slot_dt = datetime.strptime(payload.time_slot, "%H:%M")
 
     for _ in range(slots_to_check):
@@ -276,6 +272,8 @@ def book_appointment(
                 Appointment.status == "Booked",
             )
         ).first()
+        print("collison .................", collision)
+        print("check time ...............", check_time)
         if collision:
             raise HTTPException(
                 status_code=400,
@@ -338,7 +336,7 @@ def reschedule_appointment(
             detail=f"Reschedule Denied: Appointment would end at {appointment_end.strftime('%H:%M')} but therapist finishes at {working_end.strftime('%H:%M')}. Choose an earlier time slot.",
         )
 
-    slots_to_check = therapist.slot_duration 
+    slots_to_check = therapist.slot_duration // MASTER_INTERVAL_MINUTES 
     current_slot_dt = datetime.strptime(payload.time_slot, "%H:%M")
 
     for _ in range(slots_to_check):

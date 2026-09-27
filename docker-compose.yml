@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  physiodesk_db:
+    image: postgres:15-alpine
+    container_name: physiodesk_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: adminpassword123
+      POSTGRES_DB: physiodesk
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d physiodesk"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  physiodesk_backend:
+    build:
+      context: ./fastapi_backend
+      dockerfile: Dockerfile
+    container_name: physiodesk_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:adminpassword123@physiodesk_db:5432/physiodesk
+      JWT_SECRET_KEY: super_secure_random_hex_string_generate_yours_here
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    depends_on:
+      physiodesk_db:
+        condition: service_healthy
+
+  physiodesk_frontend:
+    build:
+      context: ./nextjs_frontend
+      dockerfile: Dockerfile
+    container_name: physiodesk_frontend
+    restart: always
+
+  physiodesk_gateway:
+    image: nginx:alpine
+    container_name: physiodesk_gateway
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - physiodesk_backend
+      - physiodesk_frontend
+
+volumes:
+  postgres_data:

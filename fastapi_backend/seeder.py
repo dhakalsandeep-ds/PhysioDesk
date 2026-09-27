@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from sqlmodel import Session, select, delete, text
 from database import sync_engine
 
@@ -16,28 +16,18 @@ def make_password(email: str) -> str:
     return hash_password(raw_password)
 
 
-def get_next_working_day(working_days_str: str, start_date: date) -> date:
-    allowed_days = [d.strip().capitalize() for d in working_days_str.split(",")]
-    current = start_date
-    for _ in range(14):
-        if current.strftime("%A") in allowed_days:
-            return current
-        current += timedelta(days=1)
-    return start_date
-
-
 def generate_time_slots(start_time_str: str, end_time_str: str, duration_minutes: int) -> list[str]:
     start_dt = datetime.strptime(start_time_str, "%H:%M")
     end_dt = datetime.strptime(end_time_str, "%H:%M")
-    
+
     slots = []
     current_dt = start_dt
     step = timedelta(minutes=duration_minutes)
-    
+
     while current_dt + step <= end_dt:
         slots.append(current_dt.strftime("%H:%M"))
         current_dt += step
-        
+
     return slots
 
 
@@ -73,6 +63,7 @@ def seed_database():
         wipe_tables_safely(session)
         print("All existing tables wiped clean.")
 
+
         therapist_names = [
             "Dr. Rajesh Bhattarai", "Dr. Sunita Karki", "Dr. Manish Shrestha",
             "Dr. Pooja Joshi", "Dr. Bibek Thapa", "Dr. Prashant Gurung",
@@ -104,25 +95,50 @@ def seed_database():
             "Maharajgunj, Kathmandu", "Gongabu, Kathmandu", "Kalanki, Kathmandu"
         ]
 
+        specialties = [
+            "Orthopedic & Sports Rehab", "Neurological Rehabilitation",
+            "Pediatric & Geriatric Care", "Post-Surgical Recovery",
+            "Cardiopulmonary Physio", "Spine & Pain Management"
+        ]
+
+        schedules = [
+            "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday",
+            "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday",
+            "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday"
+        ]
+
+        conditions = [
+            "Lumbar Disc Herniation", "ACL Tear Post-Op", "Cervical Spondylosis",
+            "Stroke Hemiparesis Rehab", "Rotator Cuff Tendinitis", "Frozen Shoulder",
+            "Scoliosis Postural Correction", "Total Knee Replacement Rehab", "Plantar Fasciitis"
+        ]
+
+        packages = ["Premium Package", "Basic Plan", "None"]
+        payment_methods = ["eSewa", "Khalti", "Fonepay", "Cash"]
+        inv_statuses = ["Paid", "Due"]
+
+        today = date.today()
+
+
         users = [
-            User(email="admin@physiodesk.com", hashed_password=make_password("admin@physiodesk.com"), role="admin", full_name="Admin User"),
-            User(email="staff@physiodesk.com", hashed_password=make_password("staff@physiodesk.com"), role="receptionist", full_name="Staff User")
+            User(
+                email="admin@physiodesk.com",
+                hashed_password=make_password("admin@physiodesk.com"),
+                role="admin",
+                full_name="Admin User"
+            ),
+            User(
+                email="staff@physiodesk.com",
+                hashed_password=make_password("staff@physiodesk.com"),
+                role="receptionist",
+                full_name="Staff User"
+            )
         ]
 
         session.add_all(users)
         session.commit()
         print(f"{len(users)} Users seeded")
 
-        specialties = [
-            "Orthopedic & Sports Rehab", "Neurological Rehabilitation",
-            "Pediatric & Geriatric Care", "Post-Surgical Recovery",
-            "Cardiopulmonary Physio", "Spine & Pain Management"
-        ]
-        schedules = [
-            "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday",
-            "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday",
-            "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday"
-        ]
 
         for i in range(30):
             slot_duration = 30 if i % 2 == 0 else 60
@@ -135,33 +151,38 @@ def seed_database():
                 slot_duration=slot_duration,
                 is_active=True
             ))
-        
+
         session.commit()
         therapists = session.exec(select(Therapist)).all()
         print(f"{len(therapists)} Therapists seeded")
 
-        today = date.today()
+
         overrides = []
+        blocked_dates: dict[int, set[str]] = {}
+
         for i in range(30):
             t_id = therapists[i % len(therapists)].id
             override_date = today + timedelta(days=(i * 2) - 15)
+            date_str = override_date.strftime("%Y-%m-%d")
+            is_day_off = (i % 2 == 0)
+
             overrides.append(ScheduleOverride(
                 therapist_id=t_id,
-                date=override_date.strftime("%Y-%m-%d"),
-                is_off=True if i % 2 == 0 else False,
-                reason="Medical Conference" if i % 2 == 0 else "Extended Hours Shift"
+                date=date_str,
+                is_day_off=is_day_off,
+                custom_start_time="10:00" if not is_day_off else None,
+                custom_end_time="14:00" if not is_day_off else None
             ))
+
+            if is_day_off:
+                if t_id not in blocked_dates:
+                    blocked_dates[t_id] = set()
+                blocked_dates[t_id].add(date_str)
 
         session.add_all(overrides)
         session.commit()
         print(f"{len(overrides)} Schedule Overrides seeded")
 
-        conditions = [
-            "Lumbar Disc Herniation", "ACL Tear Post-Op", "Cervical Spondylosis",
-            "Stroke Hemiparesis Rehab", "Rotator Cuff Tendinitis", "Frozen Shoulder",
-            "Scoliosis Postural Correction", "Total Knee Replacement Rehab", "Plantar Fasciitis"
-        ]
-        packages = ["Premium Package", "Basic Plan", "None"]
 
         for i in range(30):
             assigned_t = therapists[i % len(therapists)]
@@ -181,20 +202,42 @@ def seed_database():
         patients = session.exec(select(Patient)).all()
         print(f"{len(patients)} Patients seeded")
 
-        payment_methods = ["eSewa", "Khalti", "Fonepay", "Cash"]
 
         for i in range(30):
             patient = patients[i]
-            therapist = next((t for t in therapists if t.id == patient.assigned_therapist_id), therapists[i % len(therapists)])
-            
-            valid_slots = generate_time_slots(therapist.start_time, therapist.end_time, therapist.slot_duration)
+            therapist = next(
+                (t for t in therapists if t.id == patient.assigned_therapist_id),
+                therapists[i % len(therapists)]
+            )
+
+            valid_slots = generate_time_slots(
+                therapist.start_time, therapist.end_time, therapist.slot_duration
+            )
             time_slot = valid_slots[i % len(valid_slots)]
 
             if i < 10:
-                appt_date = today
+                base_date = today
             else:
                 base_date = today + timedelta(days=(i - 15))
-                appt_date = get_next_working_day(therapist.working_days, base_date)
+
+            appt_date = base_date
+            attempts = 0
+            while attempts < 30:
+                day_name = appt_date.strftime("%A")
+                working_days_list = [d.strip() for d in therapist.working_days.split(",")]
+                date_str = appt_date.strftime("%Y-%m-%d")
+
+                is_working_day = day_name in working_days_list
+                is_blocked = (
+                    therapist.id in blocked_dates
+                    and date_str in blocked_dates[therapist.id]
+                )
+
+                if is_working_day and not is_blocked:
+                    break
+
+                appt_date += timedelta(days=1)
+                attempts += 1
 
             session.add(Appointment(
                 patient_id=patient.id,
@@ -207,9 +250,8 @@ def seed_database():
 
         session.commit()
         appointments = session.exec(select(Appointment)).all()
-        print(f"{len(appointments)} Appointments committed to DB with dynamic slot intervals")
+        print(f"{len(appointments)} Appointments seeded (guaranteed valid working days, no Day Off conflicts)")
 
-        inv_statuses = ["Paid", "Due"]
 
         for i in range(30):
             patient = patients[i]
@@ -232,9 +274,10 @@ def seed_database():
 
         session.commit()
         invoices = session.exec(select(Invoice)).all()
-        print(f"{len(invoices)} Invoices committed to DB (Statuses: 'Paid' and 'Due' only)")
+        print(f"{len(invoices)} Invoices seeded")
 
-        print("\nDatabase seeding completed successfully! All entities, appointments, and invoices are active and synchronized.")
+        print("\n Database seeding completed successfully!")
+        print("   All appointments are on valid working days with no Day Off conflicts.")
 
 
 if __name__ == "__main__":

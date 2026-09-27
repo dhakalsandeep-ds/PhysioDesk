@@ -44,3 +44,14 @@ export interface BillingSummary {
   payment_breakdown: Record<string, number>;
 }
 
+export interface PatientCreate {
+  name: string;
+  phone: string;
+  age: number;
+  gender: string;
+  address: string;
+  condition: string;
+  assigned_therapist_id?: number | null;
+  package: string;
+  status: string;
+}
