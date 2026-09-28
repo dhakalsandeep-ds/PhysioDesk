@@ -129,20 +129,28 @@ export default function PatientDetailPage() {
         ) : billing ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-background rounded-lg border border-border">
-              <p className="text-xs text-text-secondary uppercase tracking-wider">Total Sessions</p>
-              <p className="text-2xl font-bold text-text-primary mt-1">{billing.total_sessions}</p>
+              <p className="text-xs text-text-secondary uppercase tracking-wider">Total Invoices</p>
+              <p className="text-2xl font-bold text-text-primary mt-1 font-display">
+                {billing.total_invoices}
+              </p>
             </div>
             <div className="p-4 bg-background rounded-lg border border-border">
-              <p className="text-xs text-text-secondary uppercase tracking-wider">Completed</p>
-              <p className="text-2xl font-bold text-success mt-1">{billing.completed_sessions}</p>
+              <p className="text-xs text-text-secondary uppercase tracking-wider">Paid</p>
+              <p className="text-2xl font-bold text-success mt-1 font-display">
+                {billing.paid_invoices}
+              </p>
             </div>
             <div className="p-4 bg-background rounded-lg border border-border">
-              <p className="text-xs text-text-secondary uppercase tracking-wider">Booked</p>
-              <p className="text-2xl font-bold text-primary mt-1">{billing.booked_sessions}</p>
+              <p className="text-xs text-text-secondary uppercase tracking-wider">Due</p>
+              <p className="text-2xl font-bold text-warning mt-1 font-display">
+                {billing.due_invoices}
+              </p>
             </div>
             <div className="p-4 bg-background rounded-lg border border-border">
-              <p className="text-xs text-text-secondary uppercase tracking-wider">Cancelled</p>
-              <p className="text-2xl font-bold text-danger mt-1">{billing.cancelled_sessions}</p>
+              <p className="text-xs text-text-secondary uppercase tracking-wider">Total Revenue</p>
+              <p className="text-2xl font-bold text-text-primary mt-1 font-mono">
+                NPR {billing.total_revenue.toFixed(2)}
+              </p>
             </div>
           </div>
         ) : null}
@@ -150,7 +158,7 @@ export default function PatientDetailPage() {
         {billing && Object.keys(billing.payment_breakdown).length > 0 && (
           <div className="mt-4 pt-4 border-t border-border">
             <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">
-              Payment Methods (Completed Sessions)
+              Payment Methods (Paid Invoices)
             </p>
             <div className="flex flex-wrap gap-2">
               {Object.entries(billing.payment_breakdown).map(([method, count]) => (

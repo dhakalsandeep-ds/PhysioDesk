@@ -9,28 +9,38 @@ import { Button } from "@/components/ui/Button";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, isLoading, error, isAuthenticated } = useAuth();
+
+  const {
+    login,
+    isLoading,
+    error,
+    isAuthenticated,
+    isCheckingAuth,
+  } = useAuth();
+
   const router = useRouter();
 
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
-
-    if (isAuthenticated) {
-      router.push("/");
+    if (!isCheckingAuth && isAuthenticated) {
+      router.replace("/");
     }
-  }, [isAuthenticated, router]);
+  }, [isCheckingAuth, isAuthenticated, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    login({ email, password });
+
+    login({
+      email,
+      password,
+    });
   };
 
-  if (!mounted) {
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-text-secondary font-medium font-body">Loading...</p>
+        <p className="text-text-secondary font-medium font-body">
+          Loading...
+        </p>
       </div>
     );
   }
@@ -52,6 +62,7 @@ export default function LoginPage() {
           <h1 className="font-display text-3xl font-bold text-text-primary tracking-tight">
             Physio<span className="text-primary">Desk</span>
           </h1>
+
           <p className="text-text-secondary mt-2 text-sm">
             Sign in to your clinic management dashboard
           </p>
@@ -59,7 +70,10 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="p-3 rounded-lg bg-danger-soft text-danger text-sm font-medium border border-danger/20">
+            <div
+              role="alert"
+              className="p-3 rounded-lg bg-danger-soft text-danger text-sm font-medium border border-danger/20"
+            >
               {(error as any)?.response?.data?.detail ||
                 "Login failed. Please try again."}
             </div>
@@ -72,6 +86,7 @@ export default function LoginPage() {
             >
               Email Address
             </label>
+
             <input
               id="email"
               type="email"
@@ -91,6 +106,7 @@ export default function LoginPage() {
             >
               Password
             </label>
+
             <input
               id="password"
               type="password"

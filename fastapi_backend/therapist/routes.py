@@ -196,7 +196,7 @@ from scheduling.models import Appointment
 def create_schedule_override(
     payload: ScheduleOverrideCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_admin: User = Depends(require_admin),
 ):
     therapist = session.get(Therapist, payload.therapist_id)
     if not therapist:

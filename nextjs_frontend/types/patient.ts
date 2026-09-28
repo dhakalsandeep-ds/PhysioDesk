@@ -37,10 +37,10 @@ export interface SessionHistoryItem {
 }
 
 export interface BillingSummary {
-  total_sessions: number;
-  completed_sessions: number;
-  cancelled_sessions: number;
-  booked_sessions: number;
+  total_invoices: number;
+  paid_invoices: number;
+  due_invoices: number;
+  total_revenue: number;
   payment_breakdown: Record<string, number>;
 }
 

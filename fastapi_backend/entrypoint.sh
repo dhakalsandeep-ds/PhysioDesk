@@ -4,6 +4,10 @@ set -e
 PORT="${PORT:-8000}"
 
 
+if [ -f .env.example ] && [ ! -f .env ]; then
+  cp .env.example .env
+fi
+
 while ! nc -z physiodesk_db 5432; do
   sleep 1
 done

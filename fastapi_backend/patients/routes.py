@@ -1,6 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlmodel import Session, select, or_, func
+from sqlmodel import Session, select, or_, func, desc
 from database import get_session
 from auth.dependencies import get_current_user
 from auth.models import User
@@ -9,6 +9,7 @@ from scheduling.models import Appointment
 from therapist.models import Therapist
 from pydantic import BaseModel
 from unified_response import SuccessResponse
+from billing.models import Invoice
 
 router = APIRouter(prefix="/patients", tags=["Patient Directory"])
 
@@ -39,10 +40,10 @@ class SessionHistoryItem(BaseModel):
 
 
 class BillingSummary(BaseModel):
-    total_sessions: int
-    completed_sessions: int
-    cancelled_sessions: int
-    booked_sessions: int
+    total_invoices: int
+    paid_invoices: int
+    due_invoices: int
+    total_revenue: float 
     payment_breakdown: dict[str, int]
 
 
@@ -93,7 +94,7 @@ def list_patients(
         count_statement = count_statement.where(Patient.status == status)
 
     total_items = session.exec(count_statement).one()
-    total_pages = max(1, (total_items + page_size - 1)) 
+    total_pages = max(1, (total_items + page_size - 1) // page_size) 
 
     if page > total_pages:
         page = total_pages
@@ -167,6 +168,8 @@ def get_patient_sessions(
     )
 
 
+
+
 @router.get("/{patient_id}/billing", response_model=SuccessResponse[BillingSummary])
 def get_patient_billing(
     patient_id: int,
@@ -177,26 +180,25 @@ def get_patient_billing(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found.")
 
-    appointments = session.exec(
-        select(Appointment).where(Appointment.patient_id == patient_id)
+    invoices = session.exec(
+        select(Invoice)
+        .where(Invoice.patient_id == patient_id)
+        .order_by(desc(Invoice.created_at))
     ).all()
-
-    total = len(appointments)
-    completed = sum(1 for a in appointments if a.status == "Completed")
-    cancelled = sum(1 for a in appointments if a.status == "Cancelled")
-    booked = sum(1 for a in appointments if a.status == "Booked")
+    
+    paid_invoices = [inv for inv in invoices if inv.status.lower() == "paid"]
+    due_invoices = [inv for inv in invoices if inv.status.lower() == "due"]
 
     payment_breakdown: dict[str, int] = {}
-    for appt in appointments:
-        if appt.status == "Completed":
-            method = appt.payment_method
-            payment_breakdown[method] = payment_breakdown.get(method, 0) + 1
+    for inv in paid_invoices:
+        method = inv.payment_method
+        payment_breakdown[method] = payment_breakdown.get(method, 0) + 1
 
     summary = BillingSummary(
-        total_sessions=total,
-        completed_sessions=completed,
-        cancelled_sessions=cancelled,
-        booked_sessions=booked,
+        total_invoices=len(invoices),
+        paid_invoices=len(paid_invoices),
+        due_invoices=len(due_invoices),
+        total_revenue=sum(inv.total_amount for inv in paid_invoices),
         payment_breakdown=payment_breakdown,
     )
 

@@ -4,7 +4,7 @@ import axios, {
 } from "axios";
 
 const rawApiUrl =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 const API_URL = rawApiUrl.endsWith("/api")
   ? rawApiUrl
@@ -146,12 +146,14 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (
-      request.url?.includes("/auth/login") ||
-      request.url?.includes("/auth/refresh")
-    ) {
-      logout();
+
+    if (request.url?.includes("/auth/login")) {
       return Promise.reject(error);
+    }
+
+    if (request.url?.includes("/auth/refresh")) {
+       logout();
+        return Promise.reject(error);
     }
 
     request._retry = true;

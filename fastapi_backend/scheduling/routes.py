@@ -391,7 +391,7 @@ def cancel_appointment(
 def delete_override(
     override_id: int,
     session: Session = Depends(get_session),
-    current_admin: User = Depends(require_admin),
+    user: User = Depends(require_admin),
 ):
     override = session.get(ScheduleOverride, override_id)
     if not override:

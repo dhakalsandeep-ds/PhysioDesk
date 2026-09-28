@@ -10,14 +10,15 @@ services:
       POSTGRES_PASSWORD: adminpassword123
       POSTGRES_DB: physiodesk
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d physiodesk"]
-      interval: 3s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-physiodesk}"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   physiodesk_backend:
     build:
@@ -48,7 +49,7 @@ services:
     container_name: physiodesk_gateway
     restart: always
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
