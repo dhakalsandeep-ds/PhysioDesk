@@ -2,6 +2,16 @@
 
 A full-stack clinic management system for physiotherapy practices. Built with **FastAPI** (backend) and **Next.js** (frontend), backed by **PostgreSQL**.
 
+## 🎥 Video Walkthrough
+
+<div align="center">
+  <video width="60%" controls>
+    <source src="video/video_walk_through_physiodesk.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</div>
+
+
 ##  Live Demo
 
 You can test the application live right now!
