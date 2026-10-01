@@ -63,6 +63,8 @@ docker compose up --build --no-cache -d
 
 ##  Authentication & Authorization
 
+![Login Screen](images/physio_desk_login.png)
+
 ### Requirements Coverage 
 
 | Requirement | Status | Implementation |
@@ -113,6 +115,7 @@ When the access token expires, multiple concurrent API calls can fail with `401`
 ---
 
 ## Dashboard Module
+![Dashboard Overview](images/physio_desk_dashboard.png)
 
 ### 1. Requirements Compliance Table
 
@@ -141,6 +144,8 @@ When the access token expires, multiple concurrent API calls can fail with `401`
 - **Strict Status Filtering**: Revenue calculation explicitly checks `inv.status.lower() == "paid"`, ensuring that "Due" or "Cancelled" invoices do not artificially inflate the daily revenue metric.
 
 ## Patients  Module
+![Patient List](images/physio_desk_patient.png)
+![Patient Detail View](images/physiodesk_pateint_detail.png)
 
 ### 1. Requirements Compliance Table
 
@@ -173,6 +178,7 @@ When the access token expires, multiple concurrent API calls can fail with `401`
 
 
 ## Scheduling Module
+![Schedule Grid](images/physio_desk_schedule.png)
 
 ### 1. Requirements Compliance Table
 
@@ -203,6 +209,8 @@ When the access token expires, multiple concurrent API calls can fail with `401`
 
 
 ## Billing Module
+![Billing Dashboard](images/physio_desk_billing.png)
+![Billing PDF Export](images/physio_desk_billing_pdf.png)
 
 ### 1. Requirements Compliance Table
 
@@ -235,6 +243,7 @@ When the access token expires, multiple concurrent API calls can fail with `401`
 
 
 ## Therapists Module
+![Therapist Management](images/physio_desk_therapist.png)
 
 ### 1. Requirements Compliance Table
 
